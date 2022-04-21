@@ -32,4 +32,6 @@ if the accumulated error is maintained at zero.
 
 Similarly, this system is unaware of the speed of the craft and assumes a constant speed. 
 
+All compass measurements taken are an average of 3 samples taken 300 ms apart. 
+
 Under the conditions of no wind (or other forces that would move the craft off course), and a constant speed, the display will provide a faithful indication of on/off course and a relative magnitued of the current off-course condition. 
