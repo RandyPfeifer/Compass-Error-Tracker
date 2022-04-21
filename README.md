@@ -10,9 +10,8 @@ Subsequent samples on a periodic basis (1 - 2 seconds) are compared with the int
 The overall accumulated Error (degrees X seconds) is displayed graphically as a growing (or shrinking) 1/4 circle. The sign (+/-) of this accumulated
 error is conveyed by which half of the screen the 1/4 circle is placed:
 
--- 1/4 circle on right indicates an accumulated error moving to the right of intended course.
-
--- 1/4 circle on the left indicates an accumulated error moving to the left of the intended course.
+- 1/4 circle on right indicates an accumulated error moving to the right of intended course.
+- 1/4 circle on the left indicates an accumulated error moving to the left of the intended course.
 
 As the accumulated error grows or shrinks the radius of the 1/4 circle expands or contracts. As you move from the error being positive to negative, 
 the 1/4 circle flips to the other side of the display.
