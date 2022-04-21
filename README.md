@@ -29,6 +29,8 @@ the 1/4 circle flips to the other side of the display.
 
 The intent would be for the user to adjust their steering to keep the circle radius as small as possible (ideally zero). 
 
+If the accumulated error grows beyond a certain threshold, the error number displayed is displayed in Yellow Font to signal the need for more aggressive action to correct the error.
+
 ## Notes
 
 This system is unaware of effects of wind on the craft in motion.  As such, on windy days, "off course" conditions can be experienced even
