@@ -11,8 +11,12 @@ The second purpose of this project was as a learning experience for myself as th
 The project utilized an Arduino compatible processor with I2C services to communicate with a MC5883L compass module to measure changes in direction 
 as well as a SSD1306-based 128 x 64 pixel display to output onoing assessment of accumulated error.
 
-When initialized, the system samples the immediate / current direction the craft is pointing.  This is then used as the intended course.
-Subsequent samples on a periodic basis (1 - 2 seconds) are compared with the initially recorded intended course.  If different, that "Error" is displayed and accumulated with subsequent samples.  The accumulated error may grow or shrink depending on adjustments made by the person steering the craft. 
+When initialized, the system samples the immediate / current direction the craft is pointing.  This bearing is then used as the intended course.
+Subsequent samples on a periodic basis (1 - 2 seconds) are compared with the initially recorded intended course.  
+All compass measurements taken are an average of 3 samples taken 300 ms apart. 
+If different, that "Error" is displayed and accumulated with subsequent samples.  
+The accumulated error may grow or shrink depending on adjustments made by the person steering the craft. Ideally
+they would strive to keep this accumulated error as small as possible without resorting to abrupt changes in direction (no sudden moves).
 
 The overall accumulated Error (degree - seconds) is displayed graphically as a growing (or shrinking) 1/4 circle. The sign (+/-) of this accumulated
 error is conveyed by which half of the screen the 1/4 circle is placed:
@@ -31,7 +35,5 @@ This system is unaware of effects of wind on the craft in motion.  As such, on w
 if the accumulated error is maintained at zero. 
 
 Similarly, this system is unaware of the speed of the craft and assumes a constant speed. 
-
-All compass measurements taken are an average of 3 samples taken 300 ms apart. 
 
 Under the conditions of no wind (or other forces that would move the craft off course), and a constant speed, the display will provide a faithful indication of on/off course and a relative magnitued of the current off-course condition. 
