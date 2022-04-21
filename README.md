@@ -12,8 +12,8 @@ The project utilized an Arduino compatible processor with I2C services to commun
 as well as a SSD1306-based 128 x 64 pixel display to output onoing assessment of accumulated error.
 
 When initialized (on power-up or reset), the system samples the immediate / current direction the craft is pointing (don't turn the system on until you are pointing where you want to go).  Note that all compass measurements taken are actually an average of 3 samples taken 300 ms apart to remove a bit of noise.  This bearing is then used as the intended (target) course.
-Subsequent measurements on a periodic basis (1 - 2 seconds) are compared with the initially recorded target course.  
 
+Subsequent measurements on a periodic basis (1 - 2 seconds) are compared with the initially recorded target course.  
 If a measurement is different from the initally captured target, that "Error" is displayed and accumulated with subsequent measurements.  
 The accumulated error may grow or shrink depending on adjustments made by the person steering the craft. Ideally
 they would strive to keep this accumulated error as small as possible without resorting to abrupt changes in direction (no sudden moves).
