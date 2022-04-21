@@ -119,7 +119,7 @@ void loop() {
 // draw a "upper half" circle that reflects the overall size of accumulated error
   display.clearDisplay();
     
-  int Cum_Err_int = Cumulative_Error;
+  int Cum_Err_int = fabs(Cumulative_Error);
   display.fillCircle(SCREEN_WIDTH/2,SCREEN_HEIGHT-1,Cum_Err_int,WHITE);
   
   // if accumulated error is postive, wipe out left half of screen. Otherwise wipe out right half.
