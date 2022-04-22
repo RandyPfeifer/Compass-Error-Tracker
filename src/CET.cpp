@@ -115,7 +115,13 @@ void loop() {
   if (flag) {  //Sample target heading on first pass through the loop
  
     Serial.print("   Reading TARGET ");
-    TARGET = read3();  
+    TARGET = read3(); 
+    display.setTextSize(2);
+    display.setTextColor(WHITE,BLACK);
+    display.setCursor(0,0);
+    display.println("TARGET");
+    display.println("ACQUIRED");
+    display.display();
     flag = false;
     delay(100);
   }
