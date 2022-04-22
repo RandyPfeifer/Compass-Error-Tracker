@@ -29,6 +29,7 @@
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
+#define Cum_Error_Threshold 25 // start to display turn signals
 #define Merge_HEIGHT   38
 #define Merge_WIDTH    38
 // 'Go_Left', 38x38px
@@ -153,7 +154,7 @@ void loop() {
   if (Cumulative_Error >= 0) {
     display.fillRect(0,0,display.width()/2,display.height(),BLACK);
     // draw left turn sign on left side of screen
- display.drawBitmap(
+    if (Cumulative_Error > Cum_Error_Threshold) display.drawBitmap(
     (display.width()/2  - Merge_WIDTH ) / 2,
     (display.height() - Merge_HEIGHT) / 2+10,
     epd_bitmap_Go_Left, Merge_WIDTH, Merge_HEIGHT, 1);
@@ -161,7 +162,7 @@ void loop() {
   else {
     display.fillRect(display.width()/2,0,display.width()/2,display.height(),BLACK);
     // draw right turn on right side of screen.
- display.drawBitmap(
+    if (Cumulative_Error < -Cum_Error_Threshold) display.drawBitmap(
     (display.width()/2  + Merge_WIDTH/2),
     (display.height() - Merge_HEIGHT) / 2+10,
     epd_bitmap_Go_Right, Merge_WIDTH, Merge_HEIGHT, 1);
@@ -171,14 +172,18 @@ void loop() {
     display.drawLine(SCREEN_WIDTH/2,SCREEN_HEIGHT/4+4,SCREEN_WIDTH/2,SCREEN_HEIGHT-1,WHITE);
   
   // Display current cycle Error amount.  If cumulative error is large, raise to yellow portion of screen.
-    display.setTextSize(1); // Draw 2X-scale text
+    display.setTextSize(1); // Draw 1X-scale text
     display.setTextColor(WHITE,BLACK);
    
-    if (fabs(Cumulative_Error) >= 60)
-      display.setCursor(display.width()/2, 0);
-    else 
-      display.setCursor(display.width()/2,20);
-    
+    if (fabs(Cumulative_Error) >= 60){
+      display.setTextSize(2); // Draw 2X-scale text
+      display.setCursor(display.width()/2-10, 0); // draw on top (yellow) line w/tweak to start of text to center on screen
+    }
+    else {
+      display.setTextSize(1); 
+      display.setCursor(display.width()/2-6,20); // draw smaller text on 2nd line
+    }
+
     display.println(int(Error*10));  // simplify expression of error to (usually)single digit.
     
     //Refresh screen
