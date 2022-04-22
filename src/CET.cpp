@@ -30,6 +30,7 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
 #define Cum_Error_Threshold 25 // start to display turn signals
+#define ALARM_THRESHOLD 60 // increase font size and move error display to yellow line. 
 #define Merge_HEIGHT   38
 #define Merge_WIDTH    38
 // 'Go_Left', 38x38px
@@ -175,7 +176,7 @@ void loop() {
     display.setTextSize(1); // Draw 1X-scale text
     display.setTextColor(WHITE,BLACK);
    
-    if (fabs(Cumulative_Error) >= 60){
+    if (fabs(Cumulative_Error) >= ALARM_THRESHOLD){
       display.setTextSize(2); // Draw 2X-scale text
       display.setCursor(display.width()/2-10, 0); // draw on top (yellow) line w/tweak to start of text to center on screen
     }
