@@ -101,7 +101,7 @@ void setup() {
   // Show initial display buffer contents on the screen --
   // the library initializes this with an Adafruit splash screen.
   display.display();
-  delay(200); // Pause for .2 seconds
+  delay(100); // Pause for .2 seconds
 
   // Clear the buffer
   display.clearDisplay();
@@ -123,7 +123,7 @@ void loop() {
     display.println("ACQUIRED");
     display.display();
     flag = false;
-    delay(100);
+    delay(200);
   }
 
   // read 3 compass samples averaged to get current heading.
@@ -200,6 +200,56 @@ void loop() {
 }
 
 
+float read3() {
+   int x, y, z, x1, y1, z1, x2, y2, z2; // these are 4 byte entities on Seeeduino XIAO
+   short sx, sy, sz, sx1, sy1, sz1, sx2, sy2, sz2; // compass will deliver 2 byte entities (signed)
+
+   // take 3 samples 300ms apart
+   compass.read(&x, &y, &z);
+   delay(300);
+   compass.read(&x1, &y1, &z1);
+   delay(300);
+   compass.read(&x2, &y2, &z2);
+
+   //convrt all samples to 16bit signed numbers
+  sx=x; sx1=x1; sx2=x2;
+  sy=y; sy1=y1; sy2=y2;
+  sz=z; sz1=z1; sz2=z2;
+  
+   // average the three samples to remove a bit of noise. 
+   sx=(sx+sx1+sx2)/3;
+   sy=(sy+sy1+sy2)/3;
+   sz=(sz+sz1+sz2)/3;
+
+   // Calculate heading when the magnetometer is level, then correct for signs of axis.
+   // Atan2() automatically check the correct formula taking care of the quadrant you are in
+   float heading = atan2(sy, sx);
+
+
+   // Correct for when signs are reversed.
+   if (heading < 0)
+    heading += 2 * PI;
+
+   // Convert radians to degrees for readability.
+   float Degrees = heading * 180 / PI;
+ 
+   Serial.print("x: ");
+  // Serial.print(x);
+  Serial.print(sx);
+  //Serial.print(x2);
+   Serial.print("    y: ");
+  // Serial.print(y);
+  Serial.print(sy);
+  // Serial.print(y2);
+   Serial.print("    z: ");
+  // Serial.print(z);
+   //Serial.print(z1);
+   Serial.print(sz);
+  
+   return Degrees;
+ }
+
+/* old version of read3()
 
 float read3() {
   int x, y, z, x1, y1, z1, x2, y2, z2;
@@ -228,3 +278,4 @@ float read3() {
  
   return Degrees;
 }
+*/
