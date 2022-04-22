@@ -1,3 +1,4 @@
+
 /*
    Derived from: e-Gizmo QMC5883L GY-271 Compass
 
@@ -23,6 +24,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -97,46 +99,33 @@ void loop() {
   Serial.print("   Cumulative Error: ");
   Serial.println(Cumulative_Error);
   
-  //test screen with numbers (delete this stuff later)
-  display.clearDisplay();
-  display.setTextSize(2); // Draw 2X-scale text
-  display.setTextColor(WHITE);
 
-  display.setCursor(0, 0);
-  display.println(TARGET);
 
-  display.setCursor(12, 20);
-  display.println(Error);
-
-  display.setCursor(12,40);
-  display.println(Cumulative_Error);
-
-  display.display(); 
-  delay(500);
-
-   
-   // draw a "upper half" circle that reflects the overall size of accumulated error
+// draw a "upper half" circle that reflects the overall size of accumulated error
   display.clearDisplay();
     
-  int radius = int(fabs(Cumulative_Error));
+  int radius = int(fabs(Cumulative_Error))+7;  // Don't let radius get too small - always want something visible
   display.fillCircle(SCREEN_WIDTH/2,SCREEN_HEIGHT-1,radius,WHITE);
-
+  
   // if accumulated error is postive, wipe out left half of screen. Otherwise wipe out right half.
   if (Cumulative_Error >= 0) 
     display.fillRect(0,0,display.width()/2,display.height(),BLACK);
   else 
     display.fillRect(display.width()/2,0,display.width()/2,display.height(),BLACK);
+
+    // Draw a vertical line to bisect the display to make left/right error more clear.
+    display.drawLine(SCREEN_WIDTH/2,SCREEN_HEIGHT/4+4,SCREEN_WIDTH/2,SCREEN_HEIGHT-1,WHITE);
   
   // Display current cycle Error amount.  If cumulative error is large, raise to yellow portion of screen.
     display.setTextSize(2); // Draw 2X-scale text
     display.setTextColor(WHITE,BLACK);
    
-    if (Cumulative_Error >= 90) 
-      display.setCursor(15, 0);
+    if (fabs(Cumulative_Error) >= 60)
+      display.setCursor(55, 0);
     else 
-      display.setCursor(15,20);
+      display.setCursor(55,20);
     
-    display.println(Error);
+    display.println(int(Error*10));  // simplify expression of error to (usually)single digit.
     
     //Refresh screen
     display.display(); // send it. 
@@ -170,12 +159,6 @@ float read3() {
 
   // Convert radians to degrees for readability.
   float Degrees = heading * 180 / PI;
-  /*Serial.print("x: ");
-   Serial.print(x);
-   Serial.print("    y: ");
-   Serial.print(y);
-   Serial.print("    z: ");
-   Serial.print(z);
-   */
+ 
   return Degrees;
 }
