@@ -24,12 +24,15 @@ error is conveyed by which half of the screen the 1/4 circle is placed:
 - 1/4 circle on right indicates the accumulated error has moved the craft to the right of intended course.
 - 1/4 circle on the left indicates an accumulated error moving to the left of the intended course.
 
-As the accumulated error grows or shrinks the radius of the 1/4 circle expands or contracts. As you move from the error being positive to negative, 
+As the accumulated error grows or shrinks the radius of the 1/4 circle expands or contracts. As you move from the accumulated error being positive to negative, 
 the 1/4 circle flips to the other side of the display.
 
 The intent would be for the user to adjust their steering to keep the circle radius as small as possible (ideally zero). 
 
-If the accumulated error grows beyond a certain threshold, the error number displayed is displayed in Yellow Font to signal the need for more aggressive action to correct the error.
+If the accumulated error grows beyond a defined threshold, the screen is updated to add a "turn signal" to the blank side of the screen.  For example, if the craft has strayed off to the right and a large 1/4 circle has grown on the right side of the screen, the left side of the screen will display a left turn signal.  Similarly for the opposite condition.  
+
+
+Also, if the accumulated error grows beyond a certain (larger) threshold, the current cycle measured error number displayed is displayed in Yellow and large Font to signal the need for more aggressive action to correct the error.
 
 ## Notes
 
