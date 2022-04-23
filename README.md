@@ -34,6 +34,8 @@ If the accumulated error grows beyond a defined threshold, the screen is updated
 
 Also, if the accumulated error grows beyond a certain (larger) threshold, the current cycle measured error number is displayed in Yellow and large Font to signal the need for more aggressive action to correct the error.
 
+A short video of the program in operation can be found here:  https://youtu.be/wzSbLun69U0
+
 ## Notes
 
 This system is unaware of effects of wind on the craft in motion.  As such, on windy days, "off course" conditions can be experienced even
