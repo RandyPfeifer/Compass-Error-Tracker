@@ -31,8 +31,8 @@
 
 #define Cum_Error_Threshold 25 // start to display turn signals
 #define ALARM_THRESHOLD 60 // increase font size and move error display to yellow line. 
-#define Merge_HEIGHT   38
-#define Merge_WIDTH    38
+#define TURN_HEIGHT   38
+#define TURN_WIDTH    38
 // 'Go_Left', 38x38px
 const unsigned char epd_bitmap_Go_Left [] PROGMEM = {
 	0xff, 0xff, 0xff, 0xff, 0xfc, 0xff, 0xff, 0xff, 0xff, 0xfc, 0xff, 0xff, 0x8f, 0xff, 0xfc, 0xff, 
@@ -101,7 +101,7 @@ void setup() {
   // Show initial display buffer contents on the screen --
   // the library initializes this with an Adafruit splash screen.
   display.display();
-  delay(100); // Pause for .2 seconds
+  delay(100); // Pause for .1 seconds
 
   // Clear the buffer
   display.clearDisplay();
@@ -123,7 +123,7 @@ void loop() {
     display.println("ACQUIRED");
     display.display();
     flag = false;
-    delay(200);
+    delay(300);
   }
 
   // read 3 compass samples averaged to get current heading.
@@ -162,17 +162,17 @@ void loop() {
     display.fillRect(0,0,display.width()/2,display.height(),BLACK);
     // draw left turn sign on left side of screen
     if (Cumulative_Error > Cum_Error_Threshold) display.drawBitmap(
-    (display.width()/2  - Merge_WIDTH ) / 2,
-    (display.height() - Merge_HEIGHT) / 2+10,
-    epd_bitmap_Go_Left, Merge_WIDTH, Merge_HEIGHT, 1);
+    (display.width()/2  - TURN_WIDTH ) / 2,
+    (display.height() - TURN_HEIGHT) / 2+10,
+    epd_bitmap_Go_Left, TURN_WIDTH, TURN_HEIGHT, 1);
   }    
   else {
     display.fillRect(display.width()/2,0,display.width()/2,display.height(),BLACK);
     // draw right turn on right side of screen.
     if (Cumulative_Error < -Cum_Error_Threshold) display.drawBitmap(
-    (display.width()/2  + Merge_WIDTH/2),
-    (display.height() - Merge_HEIGHT) / 2+10,
-    epd_bitmap_Go_Right, Merge_WIDTH, Merge_HEIGHT, 1);
+    (display.width()/2  + TURN_WIDTH/2),
+    (display.height() - TURN_HEIGHT) / 2+10,
+    epd_bitmap_Go_Right, TURN_WIDTH, TURN_HEIGHT, 1);
   }
 
     // Draw a vertical line to bisect the display to make left/right error more clear.
