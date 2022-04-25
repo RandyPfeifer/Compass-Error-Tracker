@@ -126,7 +126,7 @@ void loop() {
     display.println("TARGET");
     display.display();
     delay(1000);
-    TARGET = read3(); 
+    TARGET = (read3() + read3() + read3()) / 3;  // read 9 samples and average them.
     TARGET_COPY=TARGET;  // grab a copy of the Target - just in case...  Use to check for internal corruption later
     Cumulative_Error=0;
 
