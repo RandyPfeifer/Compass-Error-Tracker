@@ -1,6 +1,6 @@
 
 /*
-   Derived from: e-Gizmo QMC5883L GY-271 Compass
+   Derived from review of: e-Gizmo QMC5883L GY-271 Compass
 
    Sample sketch for the GY-271 QMC5883L
    for getting the raw data of x, y, z and
@@ -12,7 +12,7 @@
 
 */
 /*********
-  Also derived from:  Complete project details at https://randomnerdtutorials.com
+  Also derived from review of:  Complete project details at https://randomnerdtutorials.com
   
   This is an example for our Monochrome OLEDs based on SSD1306 drivers. Pick one up today in the adafruit shop! ------> http://www.adafruit.com/category/63_98
   This example is for a 128x32 pixel display using I2C to communicate 3 pins are required to interface (two I2C and one reset).
@@ -30,9 +30,10 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
 #define Cum_Error_Threshold 25 // start to display turn signals
-#define ALARM_THRESHOLD 60 // increase font size and move error display to yellow line. 
+#define ALARM_THRESHOLD 55 // increase font size and move error display to yellow line. 
 #define TURN_HEIGHT   38
 #define TURN_WIDTH    38
+
 // 'Go_Left', 38x38px
 const unsigned char epd_bitmap_Go_Left [] PROGMEM = {
 	0xff, 0xff, 0xff, 0xff, 0xfc, 0xff, 0xff, 0xff, 0xff, 0xfc, 0xff, 0xff, 0x8f, 0xff, 0xfc, 0xff, 
@@ -82,8 +83,13 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #include <QMC5883L.h>
 
 QMC5883L compass;
+
+
+//some global variables...
 bool flag = true;
 float Cumulative_Error = 0;
+float TARGET=777;
+float TARGET_COPY;
 
 void setup() {
   Wire.begin();
@@ -101,7 +107,7 @@ void setup() {
   // Show initial display buffer contents on the screen --
   // the library initializes this with an Adafruit splash screen.
   display.display();
-  delay(100); // Pause for .1 seconds
+  delay(200); // Pause for .2 seconds
 
   // Clear the buffer
   display.clearDisplay();
@@ -110,20 +116,28 @@ void setup() {
 
 void loop() {
 
-  float TARGET;
-
   if (flag) {  //Sample target heading on first pass through the loop
  
     Serial.print("   Reading TARGET ");
-    TARGET = read3(); 
+    display.setCursor(0,0);
     display.setTextSize(2);
     display.setTextColor(WHITE,BLACK);
-    display.setCursor(0,0);
+    display.println("ACQUIRING");
     display.println("TARGET");
-    display.println("ACQUIRED");
+    display.display();
+    delay(1000);
+    TARGET = read3(); 
+    TARGET_COPY=TARGET;  // grab a copy of the Target - just in case...  Use to check for internal corruption later
+    Cumulative_Error=0;
+
+// Signal on the display that we have a target to use.     
+    display.clearDisplay();
+    display.setCursor(0,20);
+    display.println("TARGET");
+    display.println("ACQUIRED!");
     display.display();
     flag = false;
-    delay(300);
+    delay(600);
   }
 
   // read 3 compass samples averaged to get current heading.
@@ -137,7 +151,7 @@ void loop() {
         Error += 360.0;
 
 
-  Cumulative_Error += Error;
+  Cumulative_Error = Cumulative_Error + Error;
 
   Serial.print("    Target: ");
   Serial.print(TARGET);
@@ -151,22 +165,22 @@ void loop() {
   
 
 
-// draw a "upper half" circle that reflects the overall size of accumulated error
+// draw a "upper half" circle whose radius reflects the overall size of accumulated error
   display.clearDisplay();
     
   int radius = int(fabs(Cumulative_Error))+7;  // Don't let radius get too small - always want something visible
   display.fillCircle(SCREEN_WIDTH/2,SCREEN_HEIGHT-1,radius,WHITE);
   
-  // if accumulated error is postive, wipe out left half of screen. Otherwise wipe out right half.
+  // if accumulated error is postive, wipe out left half of screen. Otherwise wipe out right half.  This produces a 1/4 circle. 
   if (Cumulative_Error >= 0) {
     display.fillRect(0,0,display.width()/2,display.height(),BLACK);
-    // draw left turn sign on left side of screen
+    // draw left turn sign on left side of screen if the accumulated error is larger than a threshold. 
     if (Cumulative_Error > Cum_Error_Threshold) display.drawBitmap(
     (display.width()/2  - TURN_WIDTH ) / 2,
     (display.height() - TURN_HEIGHT) / 2+10,
     epd_bitmap_Go_Left, TURN_WIDTH, TURN_HEIGHT, 1);
   }    
-  else {
+  else { // accumulated error is zero or negative
     display.fillRect(display.width()/2,0,display.width()/2,display.height(),BLACK);
     // draw right turn on right side of screen.
     if (Cumulative_Error < -Cum_Error_Threshold) display.drawBitmap(
@@ -188,15 +202,21 @@ void loop() {
     }
     else {
       display.setTextSize(1); 
-      display.setCursor(display.width()/2-6,20); // draw smaller text on 2nd line
+      display.setCursor(display.width()/2-6,16); // draw smaller text on 2nd line
     }
 
-    display.println(int(Error*10));  // simplify expression of error to (usually)single digit.
+    display.println(int(Error*10));  // simplify expression of error to (usually)single digit by multiplying by 10 and making an int.
     
     //Refresh screen
     display.display(); // send it. 
 
   delay(1000); // snooze 1 sec til next cycle.
+
+  if (TARGET_COPY != TARGET) {   // this should never happen 
+    Serial.println("TARGET CORRUPTION!!");
+
+  }
+  
 }
 
 
@@ -223,7 +243,7 @@ float read3() {
 
    // Calculate heading when the magnetometer is level, then correct for signs of axis.
    // Atan2() automatically check the correct formula taking care of the quadrant you are in
-   float heading = atan2(sy, sx);
+   float heading =  atan2(sy, sx);
 
 
    // Correct for when signs are reversed.
@@ -249,33 +269,3 @@ float read3() {
    return Degrees;
  }
 
-/* old version of read3()
-
-float read3() {
-  int x, y, z, x1, y1, z1, x2, y2, z2;
-
-  // take 3 samples 300ms apart
-  compass.read(&x, &y, &z);
-  delay(300);
-  compass.read(&x1, &y1, &z1);
-  delay(300);
-  compass.read(&x2, &y2, &z2);
-  // average the three samples to remove a bit of noise.
-  x = (x + x1 + x2) / 3;
-  y = (y + y1 + y2) / 3;
-  z = (z + z1 + z2) / 3;
-
-  // Calculate heading when the magnetometer is level, then correct for signs of axis.
- 
-  float heading = atan2(y, x);
-
-  // Correct for when signs are reversed.
-  if (heading < 0)
-    heading += 2 * PI;
-
-  // Convert radians to degrees for readability.
-  float Degrees = heading * 180 / PI;
- 
-  return Degrees;
-}
-*/
