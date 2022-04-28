@@ -49,6 +49,6 @@ Under the conditions of no wind (or other forces that would move the craft off c
 
 There is some kludgy code in there to account for the 32bit vs 16 bit differences between the processors and the fact that the measured samples from the compass module are 16 bit signed integers.
 
-Schematic and board designs included in /src (created with Autoca - Eagle).
+Schematic and board designs included in /src (created with Autodesk - Eagle).
 A few pictures in /Examples. including a photo of a hand etched board and first assembled prototype and a link to a utube video of working system.
 
