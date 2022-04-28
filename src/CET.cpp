@@ -112,6 +112,8 @@ void setup() {
   // Clear the buffer
   display.clearDisplay();
 
+  // set up Pin D0 as an input for a pushbutton
+  pinMode(0,INPUT);
 }
 
 void loop() {
