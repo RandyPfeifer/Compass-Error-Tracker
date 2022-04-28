@@ -47,4 +47,6 @@ Similarly, this system is unaware of the speed of the craft and assumes a consta
 
 Under the conditions of no wind (or other forces that would move the craft off course), and a constant speed, the display will provide a faithful indication of on/off course and a relative magnitued of the current off-course condition. 
 
-There is some kludgy code in there to account for the 32bit vs 16 bit differences between the processors and the fact that the measured samples from the compass module are 16 bit signed integers.. I need to figure out how to make that more elegant... It's embarassing right now.
+There is some kludgy code in there to account for the 32bit vs 16 bit differences between the processors and the fact that the measured samples from the compass module are 16 bit signed integers.
+
+Schematic and board designs included in /src (created with Autoca - Eagle).
