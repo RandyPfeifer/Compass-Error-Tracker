@@ -116,8 +116,21 @@ void setup() {
 
 void loop() {
 
-  if (flag) {  //Sample target heading on first pass through the loop
+  int Button  = digitalRead(0);
+  if (flag || Button) {  //Sample target heading on first pass through the loop or anytime the button is pressed
  
+    while (Button) {
+      Serial.println("BUTTON PUSHED");
+      display.clearDisplay();
+      display.setCursor(0,0);
+      display.setTextSize(2);
+      display.setTextColor(WHITE,BLACK);
+      display.println("BUTTON");
+      display.println("PUSHED");
+      display.display();
+      delay(500);
+      Button= digitalRead(0);
+    }
     Serial.print("   Reading TARGET ");
     display.setCursor(0,0);
     display.setTextSize(2);
