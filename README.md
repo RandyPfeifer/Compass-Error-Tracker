@@ -11,7 +11,7 @@ The second purpose of this project was as a learning experience for myself as th
 The project utilized an Arduino compatible processor with I2C services to communicate with a MC5883L compass module to measure changes in direction 
 as well as a SSD1306-based 128 x 64 pixel display to output onoing assessment of accumulated error.  Two specfic processors have been tested with this software:  Arduino Nano Every and Seeeduino XIAO. 
 
-When initialized (on power-up or reset), the system samples the immediate / current direction the craft is pointing (don't turn the system on until you are pointing where you want to go).  Note that all compass measurements taken are actually an average of 3 samples taken 300 ms apart to remove a bit of noise.  This bearing formed from 9 samples (3 reads of 3 samples each averaged) is then used as the intended (target) course.  The display will signal "TARGET ACQUIRED" when this is accomplished. 
+When initialized (on power-up or reset or when the push_button is released), the system samples the immediate / current direction the craft is pointing (don't turn the system on until you are pointing where you want to go).  Note that all compass measurements taken are actually an average of 3 samples taken 300 ms apart to remove a bit of noise.  This bearing formed from 9 samples (3 reads of 3 samples each averaged) is then used as the intended (target) course.  The display will signal "TARGET ACQUIRED" when this is accomplished. 
 
 Subsequent measurements on a periodic basis (1 - 2 seconds) are compared with the initially recorded target course.  
 If a measurement is different from the initally captured target, that "Error" is displayed in the middle of the screen and accumulated with subsequent measurements.  
@@ -33,6 +33,8 @@ If the accumulated error grows beyond a defined threshold, the screen is updated
 
 
 Also, if the accumulated error grows beyond a certain (larger) threshold, the current cycle measured error number is displayed in Yellow and large Font to signal the need for more aggressive action to correct the error.
+
+At any time, the button on the unit can be pressed which will effectively restart the process, taking a new target bearing and zeroing out the accumulated error. 
 
 A short video of the program in operation (inside my house) can be found here:  https://youtu.be/wzSbLun69U0
 
