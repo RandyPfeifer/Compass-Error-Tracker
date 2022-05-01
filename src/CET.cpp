@@ -31,6 +31,7 @@
 
 #define Cum_Error_Threshold 25 // start to display turn signals
 #define ALARM_THRESHOLD 55 // increase font size and move error display to yellow line. 
+#define HUGE_THRESHOLD 500 // display extra data when this cumulative error is reached. 
 #define TURN_HEIGHT   38
 #define TURN_WIDTH    38
 
@@ -87,13 +88,15 @@ QMC5883L compass;
 
 //some global variables...
 bool flag = true;
+bool BAT = false;
 float Cumulative_Error = 0;
 float TARGET=777;
 float TARGET_COPY;
 
 void setup() {
   Wire.begin();
-  Serial.begin(9600);
+  if (!BAT) Serial.begin(9600);  // if on battery, don't bother with serial IO
+  
   compass.init();
   
     //qmc.setMode(Mode_Continuous,ODR_200Hz,RNG_2G,OSR_256);
@@ -106,23 +109,32 @@ void setup() {
 
   // Show initial display buffer contents on the screen --
   // the library initializes this with an Adafruit splash screen.
-  display.display();
-  delay(200); // Pause for .2 seconds
+  display.display();  // Display splash..
 
+/*
+  display.ssd1306_command(0x81);  // point to contrast setting parameter
+  display.ssd1306_command(0);     // set contrast to minimum value. 
+  display.ssd1306_command(0xD9);   // point to pre-charge parameter
+  display.ssd1306_command(0x11);   // set to minimum value for both phase 1 and phase 2
+*/
+
+delay(500); // Pause for .5 seconds
+ 
   // Clear the buffer
   display.clearDisplay();
 
-  // set up Pin D0 as an input for a pushbutton
-  pinMode(0,INPUT);
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!set up Pin D0 as an input for a pushbutton
+  //pinMode(0,INPUT);
+
 }
 
 void loop() {
 
-  int Button  = digitalRead(0);
+int Button = digitalRead(0);
   if (flag || Button) {  //Sample target heading on first pass through the loop or anytime the button is pressed
  
     while (Button) {
-      Serial.println("BUTTON PUSHED");
+      if (!BAT) Serial.println("BUTTON PUSHED");
       display.clearDisplay();
       display.setCursor(0,0);
       display.setTextSize(2);
@@ -131,9 +143,10 @@ void loop() {
       display.println("PUSHED");
       display.display();
       delay(500);
-      Button= digitalRead(0);
+      Button = digitalRead(0);
     }
-    Serial.print("   Reading TARGET ");
+
+    if (!BAT) Serial.print("   Reading TARGET ");
     display.setCursor(0,0);
     display.setTextSize(2);
     display.setTextColor(WHITE,BLACK);
@@ -141,18 +154,18 @@ void loop() {
     display.println("TARGET");
     display.display();
     delay(1000);
-    TARGET = (read3() + read3() + read3()) / 3;  // read 9 samples and average them.
-    TARGET_COPY=TARGET;  // grab a copy of the Target - just in case...  Use to check for internal corruption later
-    Cumulative_Error=0;
+    TARGET = (read3() + read3() + read3()) / 3;  // read 9 samples and average them. 
+    TARGET_COPY=TARGET;  // store a copy of the Target - just in case...  Use to check for internal corruption later
+    Cumulative_Error=0; 
 
-// Signal on the display that we have a target to use.     
+    // Signal on the display that we have a target to use.     
     display.clearDisplay();
     display.setCursor(0,20);
     display.println("TARGET");
     display.println("ACQUIRED!");
     display.display();
     flag = false;
-    delay(600);
+    delay(600);  // get ready for cycles of measurements to assess error from target course.
   }
 
   // read 3 compass samples averaged to get current heading.
@@ -166,18 +179,18 @@ void loop() {
         Error += 360.0;
 
 
-  Cumulative_Error = Cumulative_Error + Error;
+  Cumulative_Error += Error;  // accumulate overall error
 
-  Serial.print("    Target: ");
+if (!BAT) {
+  Serial.print(",Target: ");
   Serial.print(TARGET);
-
-  Serial.print("    Measurement: ");
+  Serial.print(",Measurement: ");
   Serial.print(Measurement);
-  Serial.print("   Error: ");
+  Serial.print(",Error: ");
   Serial.print(Error);
-  Serial.print("   Cumulative Error: ");
+  Serial.print(",Cumulative Error: ");
   Serial.println(Cumulative_Error);
-  
+}
 
 
 // draw a "upper half" circle whose radius reflects the overall size of accumulated error
@@ -222,22 +235,35 @@ void loop() {
 
     display.println(int(Error*10));  // simplify expression of error to (usually)single digit by multiplying by 10 and making an int.
     
-    //Refresh screen
+// If cumulaltive error is huge display the cumulative error amount in the big blue square right or left.
+  if (Cumulative_Error >= HUGE_THRESHOLD) {   // write cumulaltive error on right side
+    display.setTextSize(2); 
+      display.setCursor(display.width()/2+6,30);
+      display.println(int(Cumulative_Error));
+  }
+
+  if (Cumulative_Error <= -HUGE_THRESHOLD) {  // write cumulative error on the left side.
+    display.setTextSize(2);
+      display.setCursor(2,30);
+      display.println(int(Cumulative_Error));
+    }
+    //Refresh screen for current cycle
     display.display(); // send it. 
 
   delay(1000); // snooze 1 sec til next cycle.
 
   if (TARGET_COPY != TARGET) {   // this should never happen 
-    Serial.println("TARGET CORRUPTION!!");
+    if (!BAT) Serial.println("TARGET CORRUPTION!!");
 
   }
   
 }
 
 
+
 float read3() {
    int x, y, z, x1, y1, z1, x2, y2, z2; // these are 4 byte entities on Seeeduino XIAO
-   short sx, sy, sz, sx1, sy1, sz1, sx2, sy2, sz2; // compass will deliver 2 byte entities (signed)
+   int16_t sx, sy, sz, sx1, sy1, sz1, sx2, sy2, sz2; // compass will deliver 2 byte entities (signed)
 
    // take 3 samples 300ms apart
    compass.read(&x, &y, &z);
@@ -245,8 +271,9 @@ float read3() {
    compass.read(&x1, &y1, &z1);
    delay(300);
    compass.read(&x2, &y2, &z2);
+   delay(300);
 
-   //convrt all samples to 16bit signed numbers
+   //convert all samples to 16bit signed numbers
   sx=x; sx1=x1; sx2=x2;
   sy=y; sy1=y1; sy2=y2;
   sz=z; sz1=z1; sz2=z2;
@@ -258,8 +285,7 @@ float read3() {
 
    // Calculate heading when the magnetometer is level, then correct for signs of axis.
    // Atan2() automatically check the correct formula taking care of the quadrant you are in
-   float heading =  atan2(sy, sx);
-
+   float heading = atan2(sy, sx);
 
    // Correct for when signs are reversed.
    if (heading < 0)
@@ -267,20 +293,20 @@ float read3() {
 
    // Convert radians to degrees for readability.
    float Degrees = heading * 180 / PI;
- 
+ if (!BAT) {
    Serial.print("x: ");
   // Serial.print(x);
   Serial.print(sx);
   //Serial.print(x2);
-   Serial.print("    y: ");
+   Serial.print(",y: ");
   // Serial.print(y);
   Serial.print(sy);
   // Serial.print(y2);
-   Serial.print("    z: ");
+   Serial.print(",z: ");
   // Serial.print(z);
    //Serial.print(z1);
    Serial.print(sz);
-  
+ }
    return Degrees;
  }
 
