@@ -34,7 +34,9 @@ If the accumulated error grows beyond a defined threshold, the screen is updated
 
 Also, if the accumulated error grows beyond a certain (larger) threshold, the current cycle measured error number is displayed in Yellow and large Font to signal the need for more aggressive action to correct the error.
 
-At any time, the button on the unit can be pressed which will effectively restart the process, taking a new target bearing and zeroing out the accumulated error. 
+Further, if the accumulated error grows to an enormous threshold, the side of the screen reflecting that error will display the actual accumulated error to be "worked off" by steering in the appropriate direction indicated on the other side of the display. 
+
+At any time, the button (if equipped) on the unit can be pressed which will effectively restart the process, taking a new target bearing and zeroing out the accumulated error. 
 
 A short video of the program in operation (inside my house) can be found here:  https://youtu.be/wzSbLun69U0
 
