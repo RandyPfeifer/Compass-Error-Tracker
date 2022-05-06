@@ -222,13 +222,13 @@ delay(1000); // snooze 1 sec til next cycle.
 
 
 // This sketch displays information every time a new sentence is correctly encoded.
-/*
+
   while (ss.available() > 0)
     if(gps.encode(ss.read()))  
       displayInfo();
 
 delay(2000);  // let the encoder get the first available sentence and print the next one mself. 
-  */
+
   while (ss.available() > 0) {
     char character = ss.read();
       Serial.print(character);
