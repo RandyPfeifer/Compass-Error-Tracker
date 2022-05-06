@@ -54,3 +54,7 @@ There is some kludgy code in there to account for the 32bit vs 16 bit difference
 Schematic and board designs included in /src (created with Autodesk - Eagle).
 A few pictures in /Examples. including a photo of a hand etched board and first assembled prototype and a link to a utube video of working system.
 
+
+Future work:
+
+A version of this product which will utilize outputs from a GPS module to eliminate errors induced by wind and current is in the works.  An updated board schematic and layout are included in /src along with the current state of the SW (which just barely incorporates the GPS's existance).   More to follow.
