@@ -24,8 +24,16 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <TinyGPSPlus.h>
+//#include <TinyGPSPlus.h>
+#include <NMEAGPS.h>
 #include <SoftwareSerial.h>
+static const int RXPin = 9, TXPin = 8;
+static const uint32_t GPSBaud = 9600;
+// The serial connection to the GPS device
+SoftwareSerial gpsPort(RXPin, TXPin);
+// The serial connection to the GPS device
+#define GPS_PORT_NAME "SoftwareSerial(9,8)"
+
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -87,19 +95,11 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 QMC5883L compass;
 
 
-/*
-   Use the normal use of a TinyGPSPlus (TinyGPSPlus) object.
-   It requires the use of SoftwareSerial, and assumes that you have a
-   9600-baud serial GPS device hooked up on pins 9(rx) and 8(tx).
-*/
-static const int RXPin = 9, TXPin = 8;
-static const uint32_t GPSBaud = 9600;
 
-// The TinyGPSPlus object
-TinyGPSPlus gps;
 
-// The serial connection to the GPS device
-SoftwareSerial ss(RXPin, TXPin);
+NMEAGPS gps;
+gps_fix fix;
+
 
 
 //some global variables...
@@ -113,7 +113,7 @@ void setup() {
  
   Wire.begin();     
   Serial.begin(9600);  
-  ss.begin(GPSBaud);
+  gpsPort.begin(GPSBaud);
   compass.init();     
   
 
@@ -213,79 +213,41 @@ if (!BAT) {
 Update_Display();  
 
 
-delay(1000); // snooze 1 sec til next cycle.
+//delay(1000); // snooze 1 sec til next cycle.  This time is consumed by GPS work below....
 
 
-// Check for GPS INS.  If valid data from GPS switch to using it. 
+
+// Displays information every time a new sentence is correctly encoded.
+
+//Allow GPS parser a full 1.5 seconds to get at least one fix
+int32_t time = millis();
+while (millis() <= (time+1500)) {
+    while (gps.available( gpsPort )) {
+    fix = gps.read();
+    bool  validDT         = fix.valid.date & fix.valid.time;
+
+    print(             fix.satellites       , fix.valid.satellites, 3             );
+  //  print(             fix.hdop/1000.0      , fix.valid.hdop      , 6, 2          );
+    print(             fix.latitude ()      , fix.valid.location  , 10, 6         );
+    print(             fix.longitude()      , fix.valid.location  , 11, 6         );
+    print(             fix.dateTime         , validDT             , 20            );
+    print(             fix.altitude ()      , fix.valid.altitude  , 7, 2          );
+    print(             fix.speed_kph()      , fix.valid.speed     , 7, 2          );
+    print(             fix.heading  ()      , fix.valid.heading   , 7, 2          );
+    print( gps.statistics.chars , true, 10 );
+    print( gps.statistics.ok    , true,  6 );
+    print( gps.statistics.errors, true,  6 );
+    Serial.println();
+
+// Do all the calculations for guidance on steering based on available GPS data here....
+
+// If valid data from GPS switch to using it. 
 // each cycle update Error and Cumulative_Error to use by the display routine (using either GPS or compass)
 // display something when we switch to using GPS data...
 
 
-// This sketch displays information every time a new sentence is correctly encoded.
-
-  while (ss.available() > 0)
-    if(gps.encode(ss.read()))  
-      displayInfo();
-
-delay(2000);  // let the encoder get the first available sentence and print the next one mself. 
-
-  while (ss.available() > 0) {
-    char character = ss.read();
-      Serial.print(character);
-  } 
-  
-
-/*
- //if (gps.location.isValid())
-//  {
-    Serial.print(F("LOCATION   Fix Age="));
-    Serial.print(gps.location.age());
-    Serial.print(F("ms Raw Lat="));
-    Serial.print(gps.location.rawLat().negative ? "-" : "+");
-    Serial.print(gps.location.rawLat().deg);
-    Serial.print("[+");
-    Serial.print(gps.location.rawLat().billionths);
-    Serial.print(F(" billionths],  Raw Long="));
-    Serial.print(gps.location.rawLng().negative ? "-" : "+");
-    Serial.print(gps.location.rawLng().deg);
-    Serial.print("[+");
-    Serial.print(gps.location.rawLng().billionths);
-    Serial.print(F(" billionths],  Lat="));
-    Serial.print(gps.location.lat(), 6);
-    Serial.print(F(" Long="));
-    Serial.println(gps.location.lng(), 6);
- // }
-
- // else if (gps.date.isValid())
- // {
-    Serial.print(F("DATE       Fix Age="));
-    Serial.print(gps.date.age());
-    Serial.print(F("ms Raw="));
-    Serial.print(gps.date.value());
-    Serial.print(F(" Year="));
-    Serial.print(gps.date.year());
-    Serial.print(F(" Month="));
-    Serial.print(gps.date.month());
-    Serial.print(F(" Day="));
-    Serial.println(gps.date.day());
- // }
-
-//  else if (gps.time.isValid())
-//  {
-    Serial.print(F("TIME       Fix Age="));
-    Serial.print(gps.time.age());
-    Serial.print(F("ms Raw="));
-    Serial.print(gps.time.value());
-    Serial.print(F(" Hour="));
-    Serial.print(gps.time.hour());
-    Serial.print(F(" Minute="));
-    Serial.print(gps.time.minute());
-    Serial.print(F(" Second="));
-    Serial.print(gps.time.second());
-    Serial.print(F(" Hundredths="));
-    Serial.println(gps.time.centisecond());
-  //}
-  */
+    }
+}
   
 }  // End of Loop
 
@@ -409,54 +371,63 @@ float read3() {
  }
 
 
+//-----------------
+//  Print utilities
 
-void displayInfo() // routine to display GPS data (called from Loop)
+static void repeat( char c, int8_t len )
 {
-  Serial.print(F("Location: ")); 
-  if (gps.location.isValid())
-  {
-    Serial.print(gps.location.lat(), 6);
-    Serial.print(F(","));
-    Serial.print(gps.location.lng(), 6);
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-
-  Serial.print(F("  Date/Time: "));
-  if (gps.date.isValid())
-  {
-    Serial.print(gps.date.month());
-    Serial.print(F("/"));
-    Serial.print(gps.date.day());
-    Serial.print(F("/"));
-    Serial.print(gps.date.year());
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-
-  Serial.print(F(" "));
-  if (gps.time.isValid())
-  {
-    if (gps.time.hour() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.hour());
-    Serial.print(F(":"));
-    if (gps.time.minute() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.minute());
-    Serial.print(F(":"));
-    if (gps.time.second() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.second());
-    Serial.print(F("."));
-    if (gps.time.centisecond() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.centisecond());
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-
-  Serial.println();
+  for (int8_t i=0; i<len; i++)
+    Serial.write( c );
 }
+
+static void printInvalid( int8_t len )
+{
+  Serial.write( ' ' );
+  repeat( '*', abs(len)-1 );
+}
+
+static void print( float val, bool valid, int8_t len, int8_t prec )
+{
+  if (!valid) {
+    printInvalid( len );
+  } else {
+    char s[16];
+    dtostrf( val, len, prec, s );
+    Serial.print( s );
+  }
+}
+
+static void print( int32_t val, bool valid, int8_t len )
+{
+  if (!valid) {
+    printInvalid( len );
+  } else {
+    char s[16];
+    ltoa( val, s, 10 );
+    repeat( ' ', len - strlen(s) );
+    Serial.print( s );
+  }
+}
+
+static void print( const __FlashStringHelper *str, bool valid, int8_t len )
+{
+  if (!valid) {
+    printInvalid( len );
+  } else {
+    int slen = strlen_P( (const char *) str );
+    repeat( ' ', len-slen );
+    Serial.print( str );
+  }
+}
+
+static void print( const NeoGPS::time_t & dt, bool valid, int8_t len )
+{
+  if (!valid) {
+    printInvalid( len );
+  } else {
+    Serial.write( ' ' );
+    Serial << dt; // this "streaming" operator outputs date and time
+  }
+}
+
+
