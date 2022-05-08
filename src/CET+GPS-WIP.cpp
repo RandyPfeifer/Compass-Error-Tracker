@@ -20,6 +20,21 @@
   Written by Limor Fried/Ladyada for Adafruit Industries, with contributions from the open source community. BSD license, check license.txt for more information All text above, and the splash screen below must be included in any redistribution. 
 *********/
 
+// This program utilizes the NeoGPS library and utilizes some lines of code from a couple Examples included with that library...
+
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -83,7 +98,6 @@ const unsigned char* epd_bitmap_allArray[2] = {
 };
 
 
-
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -108,7 +122,8 @@ bool BAT = false;
 float TARGET=777;
 float Error=77;
 float Cumulative_Error = 0;
-
+int GPS_Ready = 15;  // don't declare GPS mode until we have 15 or more valid sentences in a row. 
+bool GPS_flag = false;  // Signal for GPS switch-over.
 void setup() {
  
   Wire.begin();     
@@ -116,7 +131,6 @@ void setup() {
   gpsPort.begin(GPSBaud);
   compass.init();     
   
-
  
  //qmc.setMode(Mode_Continuous,ODR_200Hz,RNG_2G,OSR_256);
  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
@@ -183,6 +197,8 @@ int Button = digitalRead(0);
     display.println("ACQUIRED!");
     display.display();
     flag = false;  // don't do the above again unless reset. 
+    
+   
     delay(600);  // get ready for cycles of measurements to assess error from target course.
   }
 
@@ -220,7 +236,7 @@ Update_Display();
 // Displays information every time a new sentence is correctly encoded.
 
 //Allow GPS parser a full 1.5 seconds to get at least one fix
-int32_t time = millis();
+unsigned long time = millis();
 while (millis() <= (time+1500)) {
     while (gps.available( gpsPort )) {
     fix = gps.read();
@@ -238,17 +254,30 @@ while (millis() <= (time+1500)) {
     print( gps.statistics.ok    , true,  6 );
     print( gps.statistics.errors, true,  6 );
     Serial.println();
+ 
+ }
 
+
+} // end of 1500 ms GPS phase for this cycle
+
+   if (fix.valid.location) GPS_Ready--;  // count down to GPS Switch-over...
+    else {
+      GPS_Ready=15;  // reset hurdle condition to 15 if we miss one.
+      GPS_flag=false; 
+    }
+
+
+ if (GPS_Ready==0)
+   GPS_flag=true;  // record ready for use for GPS
+    
 // Do all the calculations for guidance on steering based on available GPS data here....
+
 
 // If valid data from GPS switch to using it. 
 // each cycle update Error and Cumulative_Error to use by the display routine (using either GPS or compass)
 // display something when we switch to using GPS data...
+// Check to see if we have had 15 valid location fixes yet
 
-
-    }
-}
-  
 }  // End of Loop
 
 
@@ -429,5 +458,4 @@ static void print( const NeoGPS::time_t & dt, bool valid, int8_t len )
     Serial << dt; // this "streaming" operator outputs date and time
   }
 }
-
 
