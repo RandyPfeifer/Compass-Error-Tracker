@@ -258,7 +258,7 @@ while (millis() <= (time+1500)) {
  }
 
 
-} // end of 1500 ms GPS phase for this cycle
+} // end of 1500 ms GPS phase for this cycle. Let's see how we did...
 
    if (fix.valid.location) GPS_Ready--;  // count down to GPS Switch-over...
     else {
@@ -271,7 +271,6 @@ while (millis() <= (time+1500)) {
    GPS_flag=true;  // record ready for use for GPS
     
 // Do all the calculations for guidance on steering based on available GPS data here....
-
 
 // If valid data from GPS switch to using it. 
 // each cycle update Error and Cumulative_Error to use by the display routine (using either GPS or compass)
@@ -345,8 +344,6 @@ float Update_Display() {  // routine to display messages on OLED display
 //end of Update_Display()
 
 
-
-
 float read3() {
    int x, y, z, x1, y1, z1, x2, y2, z2; // these are 4 byte entities on Seeeduino XIAO
    
@@ -397,7 +394,7 @@ float read3() {
    Serial.print(sz);
  }
    return Degrees;
- }
+ } // End of Read3()
 
 
 //-----------------
@@ -458,4 +455,3 @@ static void print( const NeoGPS::time_t & dt, bool valid, int8_t len )
     Serial << dt; // this "streaming" operator outputs date and time
   }
 }
-
