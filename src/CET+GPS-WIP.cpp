@@ -21,7 +21,7 @@
   Written by Limor Fried/Ladyada for Adafruit Industries, with contributions from the open source community. BSD license, check license.txt for more information All text above, and the splash screen below must be included in any redistribution. 
 *********/
 
-// This program utilizes the NeoGPS library and utilizes some lines of code from a couple Examples included with that library...
+// This program utilizes the NeoGPS library (https://github.com/SlashDevin/NeoGPS) and utilizes some lines of code from a couple Examples included with that library...
 
 //    NeoGPS is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//    along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include <SPI.h>
 #include <Wire.h>
