@@ -1,5 +1,5 @@
-Copyright (c) 2022, Randy Pfeifer
-All rights reserved.
+// Copyright (c) 2022, Randy Pfeifer
+// All rights reserved.
 /*
    Derived from review of: e-Gizmo QMC5883L GY-271 Compass
 
@@ -21,7 +21,6 @@ All rights reserved.
   Written by Limor Fried/Ladyada for Adafruit Industries, with contributions from the open source community. BSD license, check license.txt for more information All text above, and the splash screen below must be included in any redistribution. 
 *********/
 
-/* Also utilizing the NeoGPS library (https://github.com/SlashDevin/NeoGPS) and some source from included examples. 
 
 #include <SPI.h>
 #include <Wire.h>
