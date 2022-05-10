@@ -1,4 +1,5 @@
-
+// Copyright (c) 2022, Randy Pfeifer
+// All rights reserved.
 /*
    Derived from review of: e-Gizmo QMC5883L GY-271 Compass
 
