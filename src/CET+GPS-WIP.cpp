@@ -1,5 +1,6 @@
 // Copyright (c) 2022, Randy Pfeifer
 // All rights reserved.
+
 /*
    Derived from review of: e-Gizmo QMC5883L GY-271 Compass
 
@@ -21,7 +22,7 @@
   Written by Limor Fried/Ladyada for Adafruit Industries, with contributions from the open source community. BSD license, check license.txt for more information All text above, and the splash screen below must be included in any redistribution. 
 *********/
 
-// This program utilizes the NeoGPS library (https://github.com/SlashDevin/NeoGPS) and utilizes some lines of code from a couple Examples included with that library...
+// This program utilizes the NeoGPS library and utilizes some lines of code from a couple Examples included with that library...
 
 //    NeoGPS is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -34,13 +35,13 @@
 //    GNU General Public License for more details.
 //
 //    You should have received a copy of the GNU General Public License
-//    along with this program. If not, see <http://www.gnu.org/licenses/>.
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-//#include <TinyGPSPlus.h>
+
 #include <NMEAGPS.h>
 #include <SoftwareSerial.h>
 static const int RXPin = 9, TXPin = 8;
@@ -49,6 +50,7 @@ static const uint32_t GPSBaud = 9600;
 SoftwareSerial gpsPort(RXPin, TXPin);
 // The serial connection to the GPS device
 #define GPS_PORT_NAME "SoftwareSerial(9,8)"
+#define GPS_Heading_Hurdle 15
 
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -110,8 +112,6 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 QMC5883L compass;
 
 
-
-
 NMEAGPS gps;
 gps_fix fix;
 
@@ -123,8 +123,16 @@ bool BAT = false;
 float TARGET=777;
 float Error=77;
 float Cumulative_Error = 0;
-int GPS_Ready = 15;  // don't declare GPS mode until we have 15 or more valid sentences in a row. 
+int GPS_Ready = 1;  // don't declare GPS mode until we have "GPS_Heading_Hurdle" valid sentences in a row. 
 bool GPS_flag = false;  // Signal for GPS switch-over.
+float GPS_Heading=0;
+float Measurement=0;
+float New_Point_A_lat=0;
+float New_Point_A_lon=0;
+float Bearing_from_A_prime=0;
+float Bearing_to_A_prime=0;
+float temp=0;
+
 void setup() {
  
   Wire.begin();     
@@ -151,7 +159,7 @@ void setup() {
   display.ssd1306_command(0x11);   // set to minimum value for both phase 1 and phase 2
 */
 
-delay(500); // Pause for .5 seconds
+delay(500); // Pause for .5 seconds to display splashscreen
  
   // Clear the display buffer
   display.clearDisplay();
@@ -203,19 +211,63 @@ int Button = digitalRead(0);
     delay(600);  // get ready for cycles of measurements to assess error from target course.
   }
 
+if(!GPS_flag) { // navigate using the compass
   // read 3 compass samples averaged to get current heading.
-  float Measurement = read3();
+  Measurement = read3();
 
   Error = Measurement - TARGET;
 
-  // look for 360 degree wrap around and correct if ncessary
+  Cumulative_Error += Error;  // accumulate overall error
+
+}
+else { // GPS_flag must be true.  Navigate using the GPS...
+// still grab compass direction and update Measurement
+Measurement = read3(); //for no particular reason. 
+
+/* calculate  the total +/- deviation from the intended course - assign that to Cumulative_Error
+this calculation should be based on distance from Point_A and the angle deviation from TARGET
+*/
+// The base location (A_prime), in degrees * 10,000,000???
+NeoGPS::Location_t A_prime( New_Point_A_lat, New_Point_A_lon ); // Point_A
+float D = fix.location.DistanceMiles( A_prime )* 5280; //Distance to Point_A in feet.
+Bearing_to_A_prime = fix.location.BearingToDegrees(A_prime);
+
+// calclate reverse bearing (bearing from A prime)
+if (Bearing_to_A_prime >180)
+   Bearing_from_A_prime = Bearing_to_A_prime -180;
+  else
+   Bearing_from_A_prime = Bearing_to_A_prime +180;
+
+temp=Bearing_from_A_prime-TARGET; // calculate current diff in  the angle of current position vs Target
+// correct for 0/360 degree border isues. 
+if (temp > 180)
+  temp -= 360;
+if (temp <-180)
+  temp += 360;
+
+Serial.print("Bearing to / from A prime=  ")/
+Serial.print(Bearing_to_A_prime);
+Serial.print("   ");
+Serial.print(Bearing_from_A_prime);
+Serial.print("Temp = ");
+Serial.println(temp);
+
+  // Calculate the distance we are off from the Target course. 
+Cumulative_Error=D*sin(temp); 
+/*
+calculate the current course angle minus the TARGET heading - assign to Error.
+this calculation should be based on current heading compared with TARGET
+*/
+Error = fix.heading() - TARGET;  
+
+}
+ // look for 360 degree wrap around and correct if ncessary
   if (Error > 180)
         Error -= 360.0;
   if (Error < -180)
         Error += 360.0;
 
-  Cumulative_Error += Error;  // accumulate overall error
-
+// display target/measurment/error/Cumulative_Error calculated by either compass or GPS.
 if (!BAT) {
   Serial.print(",Target: ");
   Serial.print(TARGET);
@@ -230,11 +282,7 @@ if (!BAT) {
 Update_Display();  
 
 
-//delay(1000); // snooze 1 sec til next cycle.  This time is consumed by GPS work below....
-
-
-
-// Displays information every time a new sentence is correctly encoded.
+// Sample GPS information 
 
 //Allow GPS parser a full 1.5 seconds to get at least one fix
 unsigned long time = millis();
@@ -258,25 +306,26 @@ while (millis() <= (time+1500)) {
  
  }
 
-
 } // end of 1500 ms GPS phase for this cycle. Let's see how we did...
 
-   if (fix.valid.location) GPS_Ready--;  // count down to GPS Switch-over...
-    else {
-      GPS_Ready=15;  // reset hurdle condition to 15 if we miss one.
-      GPS_flag=false; 
-    }
+// Look for a string of good heading fixes IFF we are close to Compass-based guidance (low Error & Cum_Error)
+Check_for_FIX();
 
+ if (GPS_Ready > GPS_Heading_Hurdle && !GPS_flag) {// record GPS ready for use!!
+   GPS_flag=true;  // we're done with the GPS acquisition phase
+    TARGET = GPS_Heading;
+   New_Point_A_lat = fix.latitude();
+   New_Point_A_lon = fix.longitude();
+   Serial.println();
+   Serial.print("Switching to GPS Mode!   New_Target=");
+   Serial.print(TARGET);
+   Serial.print(" Point A' = ");
+   Serial.print(New_Point_A_lat,6);
+   Serial.print("  /  ");
+   Serial.println(New_Point_A_lon,6);
+   Serial.println();
 
- if (GPS_Ready==0)
-   GPS_flag=true;  // record ready for use for GPS
-    
-// Do all the calculations for guidance on steering based on available GPS data here....
-
-// If valid data from GPS switch to using it. 
-// each cycle update Error and Cumulative_Error to use by the display routine (using either GPS or compass)
-// display something when we switch to using GPS data...
-// Check to see if we have had 15 valid location fixes yet
+ }
 
 }  // End of Loop
 
@@ -341,8 +390,7 @@ float Update_Display() {  // routine to display messages on OLED display
     //Refresh screen for current cycle
     display.display(); // send it. 
  
- }
-//end of Update_Display()
+ } //end of Update_Display()
 
 
 float read3() {
@@ -396,6 +444,50 @@ float read3() {
  }
    return Degrees;
  } // End of Read3()
+
+
+ // Look for a string of good heading fixes IFF we are close to Compass-based guidance (low Error & Cum_Error)
+float Check_for_FIX() {   //           V <<< Evaluate sizes of >>>  V 
+ /* this routine calculates the average of a series of headings.  It might be much easier (and maybe more accurate)
+ to simply calculate a course from the lat/lon at beginning and end of this loop (GPS_Ready=1 -> 15) 
+ */
+ 
+  if (fix.valid.location && abs(Error)<5 && abs(Cumulative_Error) < 20  && !GPS_flag && GPS_Ready <=15)  {  //   <<<<<<---------- (change to check for fix.valid.heading for real code)
+      //         ^^^^^ change to heading.   calculate average heading so far
+      if (GPS_Ready == 1) 
+          GPS_Heading = fix.heading();  //first one stands alone...
+          else {
+          if (abs(fix.heading()-GPS_Heading) >= 340) { // deal with 360/zero wrap).
+            if (fix.heading() < 20) // this sample is on the + side of 360.
+              GPS_Heading = (GPS_Heading * (GPS_Ready-1) + fix.heading()+360) / GPS_Ready;
+              else  // this sample is on the - side of 360
+                GPS_Heading = ((GPS_Heading+360) * (GPS_Ready-1) + fix.heading()) / GPS_Ready;
+                
+          }
+          else  // not a 360/0 border issue calculate average as usual
+            GPS_Heading = (GPS_Heading * (GPS_Ready-1) + fix.heading()) / GPS_Ready;
+          }
+      if (GPS_Heading>360)  // Correct for over 360 condition on current average.
+        GPS_Heading -= 360;  
+
+        Serial.println();
+        Serial.print("GPS_Ready= ");
+        Serial.print(GPS_Ready);
+        Serial.print(" GPS_Heading= ");
+        Serial.print(GPS_Heading,3);
+        Serial.print(" fix.heading= ");
+        Serial.println(fix.heading());
+        GPS_Ready=GPS_Ready+1;  // Get ready for next cycle.
+
+
+    }
+   
+    else { // one or more conditions (i.e., error, Cum_error, valid fix) has failed
+      GPS_Ready=1;  // reset hurdle condition - restart if we miss one or not close to Compass derived line.
+     // GPS_flag=false; 
+      GPS_Heading = 0;
+    }
+} // End of Check_for_FIX
 
 
 //-----------------
@@ -456,3 +548,6 @@ static void print( const NeoGPS::time_t & dt, bool valid, int8_t len )
     Serial << dt; // this "streaming" operator outputs date and time
   }
 }
+
+
+
