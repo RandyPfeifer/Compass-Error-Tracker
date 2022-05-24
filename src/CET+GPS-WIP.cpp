@@ -139,6 +139,7 @@ void setup() {
   Serial.begin(9600);  
   gpsPort.begin(GPSBaud);
   compass.init();     
+  while(!Serial);
   
  
  //qmc.setMode(Mode_Continuous,ODR_200Hz,RNG_2G,OSR_256);
@@ -216,19 +217,24 @@ if(!GPS_flag) { // navigate using the compass
   Measurement = read3();
 
   Error = Measurement - TARGET;
+   // look for 360 degree wrap around and correct if ncessary  before accumulating error.
+  if (Error > 180)
+        Error -= 360.0;
+  if (Error < -180)
+        Error += 360.0;
 
   Cumulative_Error += Error;  // accumulate overall error
 
 }
 else { // GPS_flag must be true.  Navigate using the GPS...
 // still grab compass direction and update Measurement
-Measurement = read3(); //for no particular reason. 
+Measurement = read3(); //for no particular reason other than debug printing...
 
 /* calculate  the total +/- deviation from the intended course - assign that to Cumulative_Error
 this calculation should be based on distance from Point_A and the angle deviation from TARGET
 */
 // The base location (A_prime), in degrees * 10,000,000???
-NeoGPS::Location_t A_prime( New_Point_A_lat, New_Point_A_lon ); // Point_A
+NeoGPS::Location_t A_prime( New_Point_A_lat, New_Point_A_lon ); // the new Point_A
 float D = fix.location.DistanceMiles( A_prime )* 5280; //Distance to Point_A in feet.
 Bearing_to_A_prime = fix.location.BearingToDegrees(A_prime);
 
@@ -244,13 +250,16 @@ if (temp > 180)
   temp -= 360;
 if (temp <-180)
   temp += 360;
-
+Serial.println();
 Serial.print("Bearing to / from A prime=  ")/
 Serial.print(Bearing_to_A_prime);
-Serial.print("   ");
+Serial.print("  /   ");
 Serial.print(Bearing_from_A_prime);
 Serial.print("Temp = ");
-Serial.println(temp);
+Serial.print(temp);
+Serial.print(" D= ");
+Serial.println(D);
+
 
   // Calculate the distance we are off from the Target course. 
 Cumulative_Error=D*sin(temp); 
@@ -260,12 +269,13 @@ this calculation should be based on current heading compared with TARGET
 */
 Error = fix.heading() - TARGET;  
 
-}
  // look for 360 degree wrap around and correct if ncessary
   if (Error > 180)
         Error -= 360.0;
   if (Error < -180)
         Error += 360.0;
+}
+
 
 // display target/measurment/error/Cumulative_Error calculated by either compass or GPS.
 if (!BAT) {
@@ -386,6 +396,19 @@ float Update_Display() {  // routine to display messages on OLED display
     display.setTextSize(2);
       display.setCursor(2,30);
       display.println(int(Cumulative_Error));
+    }
+
+    // Display GPS_flag status
+    
+    display.setTextSize(1);
+    display.setCursor(116,0);
+    if (GPS_flag)
+       display.println("G!");
+    else {
+    if (GPS_Ready>1)
+      display.println("~G");
+      else
+      display.println("!G");
     }
     //Refresh screen for current cycle
     display.display(); // send it. 
@@ -548,6 +571,5 @@ static void print( const NeoGPS::time_t & dt, bool valid, int8_t len )
     Serial << dt; // this "streaming" operator outputs date and time
   }
 }
-
 
 
