@@ -49,7 +49,7 @@ static const uint32_t GPSBaud = 9600;
 // The serial connection to the GPS device
 SoftwareSerial gpsPort(RXPin, TXPin);
 // The serial connection to the GPS device
-#define GPS_PORT_NAME "SoftwareSerial(9,8)"
+
 #define GPS_Heading_Hurdle 15
 
 
@@ -245,7 +245,7 @@ if (Bearing_to_A_prime >180)
    Bearing_from_A_prime = Bearing_to_A_prime +180;
 
 temp=Bearing_from_A_prime-TARGET; // calculate current diff in  the angle of current position vs Target
-// correct for 0/360 degree border isues. 
+// correct for 0/360 degree border issues. 
 if (temp > 180)
   temp -= 360;
 if (temp <-180)
@@ -255,14 +255,14 @@ Serial.print("Bearing to / from A prime=  ")/
 Serial.print(Bearing_to_A_prime);
 Serial.print("  /   ");
 Serial.print(Bearing_from_A_prime);
-Serial.print("Temp = ");
+Serial.print(" Temp = ");
 Serial.print(temp);
 Serial.print(" D= ");
 Serial.println(D);
 
 
   // Calculate the distance we are off from the Target course. 
-Cumulative_Error=D*sin(temp); 
+Cumulative_Error=D*sin(temp*PI/180); 
 /*
 calculate the current course angle minus the TARGET heading - assign to Error.
 this calculation should be based on current heading compared with TARGET
@@ -279,7 +279,7 @@ Error = fix.heading() - TARGET;
 
 // display target/measurment/error/Cumulative_Error calculated by either compass or GPS.
 if (!BAT) {
-  Serial.print(",Target: ");
+  Serial.print("Target: ");
   Serial.print(TARGET);
   Serial.print(",Measurement: ");
   Serial.print(Measurement);
@@ -398,17 +398,17 @@ float Update_Display() {  // routine to display messages on OLED display
       display.println(int(Cumulative_Error));
     }
 
-    // Display GPS_flag status
+    // Display GPS status
     
     display.setTextSize(1);
     display.setCursor(116,0);
     if (GPS_flag)
-       display.println("G!");
+       display.println("G!"); // now using GPS
     else {
     if (GPS_Ready>1)
-      display.println("~G");
+      display.println("~G");  // GPS is "in training"
       else
-      display.println("!G");
+      display.println("!G"); // No GPS data available yet.
     }
     //Refresh screen for current cycle
     display.display(); // send it. 
@@ -571,5 +571,6 @@ static void print( const NeoGPS::time_t & dt, bool valid, int8_t len )
     Serial << dt; // this "streaming" operator outputs date and time
   }
 }
+
 
 
