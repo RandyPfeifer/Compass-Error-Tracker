@@ -126,6 +126,8 @@ float Cumulative_Error = 0;
 int GPS_Ready = 1;  // don't declare GPS mode until we have "GPS_Heading_Hurdle" valid sentences in a row. 
 bool GPS_flag = false;  // Signal for GPS switch-over.
 float GPS_Heading=0;
+float REAL_TARGET=0;
+bool REAL_TARGET_Flag=false;
 float Measurement=0;
 float New_Point_A_lat=0;
 float New_Point_A_lon=0;
@@ -139,7 +141,7 @@ void setup() {
   Serial.begin(9600);  
   gpsPort.begin(GPSBaud);
   compass.init();     
-  while(!Serial);
+  //while(!Serial);
   
  
  //qmc.setMode(Mode_Continuous,ODR_200Hz,RNG_2G,OSR_256);
@@ -175,7 +177,7 @@ void loop() {
 
 int Button = digitalRead(0);
   if (flag || Button) {  //Sample target heading on first pass through the loop or anytime the button is pressed
- 
+  unsigned long time = millis();
     while (Button) {
       if (!BAT) Serial.println("BUTTON PUSHED");
       display.clearDisplay();
@@ -185,6 +187,13 @@ int Button = digitalRead(0);
       display.println("BUTTON");
       display.println("PUSHED");
       display.display();
+      
+      if (millis() >= (time+3000)) { // long hold on button - initiate recording of heading for GPS later
+        REAL_TARGET = read3();
+        REAL_TARGET_Flag=true;
+        display.println(REAL_TARGET);
+        display.display();
+      }
       delay(500);
       Button = digitalRead(0);
     }
@@ -206,9 +215,9 @@ int Button = digitalRead(0);
     display.println("TARGET");
     display.println("ACQUIRED!");
     display.display();
-    flag = false;  // don't do the above again unless reset. 
-    
-   
+    flag = false;  // don't do the above again unless reset button is pushed. 
+    GPS_flag = false;  // start with Compass navigation (reset to false if button is pushed)
+    GPS_Ready = 1;
     delay(600);  // get ready for cycles of measurements to assess error from target course.
   }
 
@@ -323,7 +332,11 @@ Check_for_FIX();
 
  if (GPS_Ready > GPS_Heading_Hurdle && !GPS_flag) {// record GPS ready for use!!
    GPS_flag=true;  // we're done with the GPS acquisition phase
-    TARGET = GPS_Heading;
+
+   // assign new target for GPS navigation. 
+    TARGET = GPS_Heading;  // Use this if REAL_TARGET wasn't set via long BUTTON PUSH.
+    if (REAL_TARGET_Flag == true)
+      TARGET = REAL_TARGET; // Use this if Long BUTTON PUSH was used to provide the actual target heading.
    New_Point_A_lat = fix.latitude();
    New_Point_A_lon = fix.longitude();
    Serial.println();
@@ -401,9 +414,12 @@ float Update_Display() {  // routine to display messages on OLED display
     // Display GPS status
     
     display.setTextSize(1);
-    display.setCursor(116,0);
-    if (GPS_flag)
-       display.println("G!"); // now using GPS
+    display.setCursor(display.width()-12,0);
+    if (GPS_flag){
+       display.print("G!"); // now using GPS
+       display.setCursor(0,0);
+       display.println(fix.heading()); //display current heading
+    }       
     else {
     if (GPS_Ready>1)
       display.println("~G");  // GPS is "in training"
@@ -475,15 +491,15 @@ float Check_for_FIX() {   //           V <<< Evaluate sizes of >>>  V
  to simply calculate a course from the lat/lon at beginning and end of this loop (GPS_Ready=1 -> 15) 
  */
  
-  if (fix.valid.location && abs(Error)<5 && abs(Cumulative_Error) < 20  && !GPS_flag && GPS_Ready <=15)  {  //   <<<<<<---------- (change to check for fix.valid.heading for real code)
+  if (fix.valid.location && abs(Error)<5 && abs(Cumulative_Error) < 20  && !GPS_flag && GPS_Ready <=GPS_Heading_Hurdle)  {  //   <<<<<<---------- (change to check for fix.valid.heading for real code)
       //         ^^^^^ change to heading.   calculate average heading so far
       if (GPS_Ready == 1) 
           GPS_Heading = fix.heading();  //first one stands alone...
           else {
-          if (abs(fix.heading()-GPS_Heading) >= 340) { // deal with 360/zero wrap).
-            if (fix.heading() < 20) // this sample is on the + side of 360.
+          if (abs(fix.heading()-GPS_Heading) >= 330) { // deal with 360/zero wrap).
+            if (fix.heading() < 30) // this sample is on the + side of 360. GPS_Heading must be just under 360
               GPS_Heading = (GPS_Heading * (GPS_Ready-1) + fix.heading()+360) / GPS_Ready;
-              else  // this sample is on the - side of 360
+              else  // this sample is on the - side of 360 & GPS_Heading must be above 0.
                 GPS_Heading = ((GPS_Heading+360) * (GPS_Ready-1) + fix.heading()) / GPS_Ready;
                 
           }
@@ -502,14 +518,15 @@ float Check_for_FIX() {   //           V <<< Evaluate sizes of >>>  V
         Serial.println(fix.heading());
         GPS_Ready=GPS_Ready+1;  // Get ready for next cycle.
 
-
     }
-   
     else { // one or more conditions (i.e., error, Cum_error, valid fix) has failed
       GPS_Ready=1;  // reset hurdle condition - restart if we miss one or not close to Compass derived line.
      // GPS_flag=false; 
       GPS_Heading = 0;
     }
+    
+    if (fix.valid.location && REAL_TARGET_Flag)  // <<<<<<<--------------change to heading....
+      GPS_Ready=GPS_Heading_Hurdle+1;  // don't waste time calculating an average heading if you already have a heading. 
 } // End of Check_for_FIX
 
 
