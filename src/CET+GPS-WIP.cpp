@@ -133,7 +133,7 @@ float New_Point_A_lat=0;
 float New_Point_A_lon=0;
 float Bearing_from_A_prime=0;
 float Bearing_to_A_prime=0;
-float temp=0;
+float Error_Angle=0;
 
 void setup() {
  
@@ -194,6 +194,9 @@ int Button = digitalRead(0);
         display.println(REAL_TARGET);
         display.display();
       }
+      else {
+        REAL_TARGET_Flag=false;
+      }
       delay(500);
       Button = digitalRead(0);
     }
@@ -206,7 +209,8 @@ int Button = digitalRead(0);
     display.println("TARGET");
     display.display();
     delay(1000);
-    TARGET = (read3() + read3() + read3()) / 3;  // read 9 samples and average them. 
+    TARGET = (read3() + read3() + read3()) / 3;  // read 9 samples and average them.   NOTE!: this code doesn't account for the 0/360 boundary properly
+
     Cumulative_Error=0; 
 
     // Signal on the display that we have a target to use.     
@@ -253,25 +257,25 @@ if (Bearing_to_A_prime >180)
   else
    Bearing_from_A_prime = Bearing_to_A_prime +180;
 
-temp=Bearing_from_A_prime-TARGET; // calculate current diff in  the angle of current position vs Target
+Error_Angle=Bearing_from_A_prime-TARGET; // calculate current diff in  the angle of current position vs Target
 // correct for 0/360 degree border issues. 
-if (temp > 180)
-  temp -= 360;
-if (temp <-180)
-  temp += 360;
+if (Error_Angle > 180)
+  Error_Angle -= 360;
+if (Error_Angle <-180)
+  Error_Angle += 360;
 Serial.println();
 Serial.print("Bearing to / from A prime=  ")/
 Serial.print(Bearing_to_A_prime);
 Serial.print("  /   ");
 Serial.print(Bearing_from_A_prime);
-Serial.print(" Temp = ");
-Serial.print(temp);
+Serial.print(" TError_Angle = ");
+Serial.print(Error_Angle);
 Serial.print(" D= ");
 Serial.println(D);
 
 
   // Calculate the distance we are off from the Target course. 
-Cumulative_Error=D*sin(temp*PI/180); 
+Cumulative_Error=D*sin(Error_Angle*PI/180); 
 /*
 calculate the current course angle minus the TARGET heading - assign to Error.
 this calculation should be based on current heading compared with TARGET
@@ -334,9 +338,10 @@ Check_for_FIX();
    GPS_flag=true;  // we're done with the GPS acquisition phase
 
    // assign new target for GPS navigation. 
-    TARGET = GPS_Heading;  // Use this if REAL_TARGET wasn't set via long BUTTON PUSH.
-    if (REAL_TARGET_Flag == true)
+    if (REAL_TARGET_Flag)
       TARGET = REAL_TARGET; // Use this if Long BUTTON PUSH was used to provide the actual target heading.
+      else 
+       TARGET = GPS_Heading;  // Use this if REAL_TARGET wasn't set via long BUTTON PUSH.
    New_Point_A_lat = fix.latitude();
    New_Point_A_lon = fix.longitude();
    Serial.println();
@@ -492,7 +497,7 @@ float Check_for_FIX() {   //           V <<< Evaluate sizes of >>>  V
  */
  
   if (fix.valid.location && abs(Error)<5 && abs(Cumulative_Error) < 20  && !GPS_flag && GPS_Ready <=GPS_Heading_Hurdle)  {  //   <<<<<<---------- (change to check for fix.valid.heading for real code)
-      //         ^^^^^ change to heading.   calculate average heading so far
+      //         ^^^^^ changed from to location.   calculate average heading so far
       if (GPS_Ready == 1) 
           GPS_Heading = fix.heading();  //first one stands alone...
           else {
@@ -588,6 +593,3 @@ static void print( const NeoGPS::time_t & dt, bool valid, int8_t len )
     Serial << dt; // this "streaming" operator outputs date and time
   }
 }
-
-
-
