@@ -56,7 +56,7 @@ A few pictures in /Examples. including a photo of a hand etched board and first 
 
 ## GPS services
 
-The unit also includes a GPS module.  Once it is in service and has a lock with sufficient number of satellites, it will begin to deliver sentences with location, heading, speed, etc.  The software will switch to navigating using the GPS once certain criteria are met:
+The unit also includes a GPS module.  Once it is in service and has a lock with a sufficient number of satellites, it will begin to deliver NMEA sentences with location (lat/lon), heading, speed, etc.  The software will switch to navigating using the GPS once certain criteria are met:
 
 1. The paddler is within a certain cumulative error level (we want them to be close to their original intended line of travel)
 2. The current heading is close to the intended heading identified at the beginning of the session (i.e., pointing in the right direction)
@@ -68,9 +68,9 @@ This avoids the need for the compass to produce a heading that is true to the re
 With that GPS-derived heading the software calculates the deviation from a line drawn from the point the GPS came into service (point A') in the direction of the GPS-derived target heading.  This deviation is now displayed as the cumulative error in the same fashion cumulative errors were displayed under compass navigation. The error displayed in the middle of the screen, which used to be the difference in current compass angle and the intended heading, is replaced with a new error which is the difference in current heading and the intended heading. Hence the meaning and interpretation of the display are consistent in Compass and GPS modes. 
 
 In the upper right corner of the display will be an indicator of the status of the GPS module:
-!G - no GPS services are available
-~G - the system is currently using valid GPS data and is in the 45+ second training cycle with the above criteria being met (this cycle may fail and need to be extended until the above criteria are met - a flip back to !G).
-G! - the system has acheived all criteria for switching to GPS navigation and has made the transition. No further us of the compass is needed. 
+- !G - no GPS services are available
+- ~G - the system is currently using valid GPS data and is in the 45+ second training cycle with the above criteria being met (this cycle may fail and need to be extended until the above criteria are met - a flip back to !G).
+- G! - the system has acheived all criteria for switching to GPS navigation and has made the transition. No further us of the compass is needed. 
 
 When G! has been acheived, the upper left corner of the display shows the current heading reported by the GPS. 
 
