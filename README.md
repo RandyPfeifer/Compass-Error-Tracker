@@ -78,3 +78,6 @@ Every 2-3 seconds, the GPS is polled for new information and the error calculati
 
 In order to eliminate any error in the GPS training cycle, the user can choose to explicitly provide the intended heading (in addition to pointing the craft in the proper direction when the system is powered up).   Even if GPS services are not available, the user can press the (reset) button on the unit and hold it down for an excess of 3 seconds.  This will signal the system to enter an "input" mode and it will display the current compass reading on the display.  The user can then rotate the unit to get the compass direction they are intending to travel on the display.  Once this is acheived, simply releasing the button will cause this last reading to be recorded for future use by the GPS.  Once the GPS comes online, the training process is circumvented and the system begins to immediatley navigate using the "input" target heading. 
 
+The user could of course wait at their starting point for the GPS to be in service and perform all of their paddling under the guidance of the GPS. 
+
+
