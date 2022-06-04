@@ -1,5 +1,5 @@
 # Compass-Error-Tracker
-Using a compass and small display, plot accumulated error (+/-) in your heading vs intended course
+Using a compass, GPS and small display, plot accumulated error (+/-) in your heading vs intended course
 
 
 This project was undertaken to provide training experiences for canoe paddlers interested in improving their ability to paddle from Point A 
@@ -36,7 +36,7 @@ Also, if the accumulated error grows beyond a certain (larger) threshold, the cu
 
 Further, if the accumulated error grows to an enormous threshold, the side of the screen reflecting that error will display the actual accumulated error to be "worked off" by steering in the appropriate direction indicated on the other side of the display. 
 
-At any time, the button (if equipped) on the unit can be pressed which will effectively restart the process, taking a new target bearing and zeroing out the accumulated error. 
+At any time, the button on the unit can be pressed which will effectively restart the process, taking a new target bearing and zeroing out the accumulated error. 
 
 A short video of the program in operation (inside my house) can be found here:  https://youtu.be/wzSbLun69U0
 
@@ -49,12 +49,32 @@ Similarly, this system is unaware of the speed of the craft and assumes a consta
 
 Under the conditions of no wind (or other forces that would move the craft off course), and a constant speed, the display will provide a faithful indication of on/off course and a relative magnitued of the current off-course condition. 
 
-There is some kludgy code in there to account for the 32bit vs 16 bit differences between the processors and the fact that the measured samples from the compass module are 16 bit signed integers.
+There is some  code in there to account for the 32bit vs 16 bit differences between the processors and the fact that the measured samples from the compass module are 16 bit signed integers.
 
 Schematic and board designs included in /src (created with Autodesk - Eagle).
 A few pictures in /Examples. including a photo of a hand etched board and first assembled prototype and a link to a utube video of working system.
 
+## GPS services
 
-Future work:
+The unit also includes a GPS module.  Once it is in service and has a lock with sufficiet number of satellites, it will begin to deliver sentences with location, heading, speed, etc.  The software will switch to navigating using the GPS once certain criteria are met:
 
-A version of this product which will utilize outputs from a GPS module to eliminate errors induced by wind and current is in the works.  An updated board schematic and layout are included in /src along with the current state of the SW (which just barely incorporates the GPS's existance).   More to follow.
+1. The paddler is within a certain cumulative error level (we want them to be close to their original intended line of travel)
+2. The current heading is close to the intended heading identified at the beginning of the session (i.e., pointing in the right direction)
+
+These criteria ensure that the craft is on the correct path (ignoring wind conditions referenced above) and GPS navigation can continue from there. 
+After maintaining this criteria for a period of about 30 seconds, the GPS will derive a heading from its own readings and determine the heading target that the GPS will follow.
+This avoids the need for the compass to produce a heading that is true to the real world (it only needed relative changes in direction to do all of its work so far). 
+
+With that GPS derived heading the software calculates the deviation from a line drawn from the point the GPS came into service (point A') in the direction of the GPS-derived target heading.  This deviation is now displayed as the cumulative error in the same fashion cumulative errors were displayed under compass navigation. The error displayed in the middle of the screen, which used to be the difference in current angle and the intended heading, is replaced with a new error which is the difference in current heading and the intended heading. Hence the meaning and interpretation of the display are consistent in Compass and GPS modes. 
+
+In the upper right corner of the display will be an indicator of the status of the GPS module:
+!G - no GPS services are available
+~G - the system is currently using valid GPS data and is in the 30+ second training cycle (this cycle may fail and need to be extended until the above criteria are met.
+G! - the system has acheived all criteria for switching to GPS navigation and has made the transition. 
+
+When G! has been acheived, the upper left corner of the display shows the current heading reported by the GPS. 
+
+Every 2-3 seconds, the GPS is polled for new information and the error calculation is repeated and the display updated.  The paddler can now be confident that no additional error can be introduced by effects of wind or current.  As long as GPS services remain, the system will continue to deliver accurate assessment of the overall divergence from the GPS derived heading.  
+
+In order to eliminate any error in the GPS training cycle, the user can explicitly provide the intended heading (in addition to pointing the craft in the proper direction when the system is powered up).   Even if GPS services are not available, the user can press the (reset) button on the unit and hold it down for an excess of 3 seconds.  This will signal the system to enter an "input" mode and it will display the current compass reading on the display.  The user can then rotate the unit to get the compass direction they are intending to travel.  Once this is acheived, simply releasing the button will cause this last reading to be recorded for future use by the GPS.  Once the GPS comes online, the training process is circumvented and the system begins to immediatley navigate using the "input" target heading. 
+
