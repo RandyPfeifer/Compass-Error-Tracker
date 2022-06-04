@@ -69,7 +69,7 @@ With that GPS-derived heading the software calculates the deviation from a line 
 
 In the upper right corner of the display will be an indicator of the status of the GPS module:
 - !G - no GPS services are available
-- ~G - the system is currently using valid GPS data and is in the 45+ second training cycle with the above criteria being met (this cycle may fail and need to be extended until the above criteria are met - a flip back to !G).
+- ~G - the system is currently using valid GPS data and is in the 45+ second training cycle with the above criteria being met (this cycle may fail and need to be extended until the above criteria are met again - a flip back to !G).
 - G! - the system has acheived all criteria for switching to GPS navigation and has made the transition. No further us of the compass is needed. 
 
 When G! has been acheived, the upper left corner of the display shows the current heading reported by the GPS. 
