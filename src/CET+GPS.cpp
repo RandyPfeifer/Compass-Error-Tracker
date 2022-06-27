@@ -169,7 +169,8 @@ delay(500); // Pause for .5 seconds to display splashscreen
 
   // set up Pin D0 as an input for a pushbutton. May be used someday.... Pulled down with 10K resistor.
   pinMode(0,INPUT);
-
+    
+  REAL_TARGET_Flag=false;
 
 }
 
@@ -194,9 +195,15 @@ int Button = digitalRead(0);
         display.println(REAL_TARGET);
         display.display();
       }
+      /* Don't reset flag if previously set - keep REAL_TARGET setting even if button is short-pushed later.  
+      This will allow user to short-push button to initiate compass-based navigation until GPS is online.  
+      Only a power-cycle will reset REAL_TARGET_Flag to flase. 
+      
       else {
-        REAL_TARGET_Flag=false;
+       // REAL_TARGET_Flag=false;   
       }
+      */
+
       delay(500);
       Button = digitalRead(0);
     }
@@ -268,7 +275,7 @@ Serial.print("Bearing to / from A prime=  ")/
 Serial.print(Bearing_to_A_prime);
 Serial.print("  /   ");
 Serial.print(Bearing_from_A_prime);
-Serial.print(" TError_Angle = ");
+Serial.print(" Error_Angle = ");
 Serial.print(Error_Angle);
 Serial.print(" D= ");
 Serial.println(D);
@@ -497,7 +504,7 @@ float Check_for_FIX() {   //           V <<< Evaluate sizes of >>>  V
  */
  
   if (fix.valid.location && abs(Error)<5 && abs(Cumulative_Error) < 20  && !GPS_flag && GPS_Ready <=GPS_Heading_Hurdle)  {  //   <<<<<<---------- (change to check for fix.valid.heading for real code)
-      //         ^^^^^ changed from to location.   calculate average heading so far
+      //         ^^^^^    calculate average heading so far
       if (GPS_Ready == 1) 
           GPS_Heading = fix.heading();  //first one stands alone...
           else {
@@ -530,7 +537,7 @@ float Check_for_FIX() {   //           V <<< Evaluate sizes of >>>  V
       GPS_Heading = 0;
     }
     
-    if (fix.valid.location && REAL_TARGET_Flag)  // <<<<<<<--------------change to heading....
+    if (fix.valid.location && REAL_TARGET_Flag)  // <<<<<< Changed to .heading
       GPS_Ready=GPS_Heading_Hurdle+1;  // don't waste time calculating an average heading if you already have a heading. 
 } // End of Check_for_FIX
 
