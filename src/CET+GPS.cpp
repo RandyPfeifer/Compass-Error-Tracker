@@ -187,14 +187,12 @@ int Button = digitalRead(0);
       display.setTextColor(WHITE,BLACK);
       display.println("BUTTON");
       display.println("PUSHED");
-      display.display();
-      
       if (millis() >= (time+3000)) { // long hold on button - initiate recording of heading for GPS later
         REAL_TARGET = read3();
         REAL_TARGET_Flag=true;
         display.println(REAL_TARGET);
-        display.display();
       }
+      display.display();  
       /* Don't reset flag if previously set - keep REAL_TARGET setting even if button is short-pushed later.  
       This will allow user to short-push button to initiate compass-based navigation until GPS is online.  
       Only a power-cycle will reset REAL_TARGET_Flag to flase. 
