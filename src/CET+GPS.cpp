@@ -118,7 +118,7 @@ gps_fix fix;
 
 
 //some global variables...
-bool flag = true;
+bool Start_flag = true;
 bool BAT = false;
 float TARGET=777;
 float Error=77;
@@ -177,7 +177,7 @@ delay(500); // Pause for .5 seconds to display splashscreen
 void loop() {
 
 int Button = digitalRead(0);
-  if (flag || Button) {  //Sample target heading on first pass through the loop or anytime the button is pressed
+  if (Start_flag || Button) {  //Sample target heading on first pass through the loop or anytime the button is pressed
   unsigned long time = millis();
     while (Button) {
       if (!BAT) Serial.println("BUTTON PUSHED");
@@ -192,7 +192,7 @@ int Button = digitalRead(0);
         REAL_TARGET_Flag=true;
         display.println(REAL_TARGET);
       }
-      display.display();  
+      display.display();      
       /* Don't reset flag if previously set - keep REAL_TARGET setting even if button is short-pushed later.  
       This will allow user to short-push button to initiate compass-based navigation until GPS is online.  
       Only a power-cycle will reset REAL_TARGET_Flag to flase. 
@@ -202,7 +202,7 @@ int Button = digitalRead(0);
       }
       */
 
-      delay(500);
+      delay(200);
       Button = digitalRead(0);
     }
 
@@ -224,7 +224,7 @@ int Button = digitalRead(0);
     display.println("TARGET");
     display.println("ACQUIRED!");
     display.display();
-    flag = false;  // don't do the above again unless reset button is pushed. 
+    Start_flag = false;  // don't do the above again unless reset button is pushed. 
     GPS_flag = false;  // start with Compass navigation (reset to false if button is pushed)
     GPS_Ready = 1;
     delay(600);  // get ready for cycles of measurements to assess error from target course.
@@ -246,7 +246,7 @@ if(!GPS_flag) { // navigate using the compass
 }
 else { // GPS_flag must be true.  Navigate using the GPS...
 // still grab compass direction and update Measurement
-Measurement = read3(); //for no particular reason other than debug printing...
+Measurement = read3(); //for no particular reason other than debug printing and consistent loop timing...
 
 /* calculate  the total +/- deviation from the intended course - assign that to Cumulative_Error
 this calculation should be based on distance from Point_A and the angle deviation from TARGET
@@ -340,7 +340,7 @@ while (millis() <= (time+1500)) {
 Check_for_FIX();
 
  if (GPS_Ready > GPS_Heading_Hurdle && !GPS_flag) {// record GPS ready for use!!
-   GPS_flag=true;  // we're done with the GPS acquisition phase
+   GPS_flag=true;  // we're done with the GPS acquisition phase (shorter phase if REAL_TARGET was assigned via long push)
 
    // assign new target for GPS navigation. 
     if (REAL_TARGET_Flag)
@@ -451,11 +451,11 @@ float read3() {
 
    // take 3 samples 300ms apart
    compass.read(&x, &y, &z);
-   delay(300);
+   delay(200);
    compass.read(&x1, &y1, &z1);
-   delay(300);
+   delay(200);
    compass.read(&x2, &y2, &z2);
-   delay(300);
+   delay(200);
 
    //convert all samples to 16bit signed numbers
   sx=x; sx1=x1; sx2=x2;
@@ -469,7 +469,7 @@ float read3() {
 
    // Calculate heading when the magnetometer is level, then correct for signs of axis.
    // Atan2() automatically check the correct formula taking care of the quadrant you are in
-   float heading = atan2(sy, sx);
+   float heading = atan2(-sx, sy);
 
    // Correct for when signs are reversed.
    if (heading < 0)
