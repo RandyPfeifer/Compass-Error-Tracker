@@ -189,9 +189,8 @@ int Button = digitalRead(0);
       display.println("PUSHED");
       if (millis() >= (time+2000)) { // long hold on button - initiate recording of heading for GPS later
         REAL_TARGET = read3();
-        int REAL_TARGET_int = REAL_TARGET;
         REAL_TARGET_Flag=true;
-        display.println(REAL_TARGET_int);
+        display.println(REAL_TARGET,0);
       }
       display.display();
       /* Don't reset flag if previously set - keep REAL_TARGET setting even if button is short-pushed later.  
@@ -429,7 +428,8 @@ float Update_Display() {  // routine to display messages on OLED display
     if (GPS_flag){
        display.print("G!"); // now using GPS
        display.setCursor(0,0);
-       display.println(fix.heading()); //display current heading
+       display.setTextSize(2);  // test with heading in larger font....
+       display.println(fix.heading(),0); //display current heading
     }       
     else {
     if (GPS_Ready>1)
